@@ -1,444 +1,528 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="mn">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Оюунсанаа — Чат</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Оюунсанаа — Сэтгэлийн хөтөч</title>
 
-<!-- Фонт (хоёрхон — Inter 400/600, Montserrat 700) -->
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Montserrat:wght@700&display=swap" rel="stylesheet">
+  <!-- Фонт -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Montserrat:wght@600&display=swap" rel="stylesheet">
 
-<style>
-:root{
-  --brand:#800000; --bg:#fff; --text:#222; --muted:#8a8a8a; --line:#e9e9ee;
-  --user:#f7f2f2; --bot:#fff; --shadow:0 10px 30px rgba(0,0,0,.12);
-  --font-ui:"Inter", system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
-  --font-title:"Montserrat", var(--font-ui);
-  --t-base:14px; --line-compact:1.25;
-}
+  <style>
+    :root{
+      --brand:#800000;           /* гадаад товч, меню акцент */
+      --chat:#075E54;            /* чатны толгой + илгээх/клип */
+      --bg:#fff;
+      --wall:#fafafa;            /* чат ханын фон */
+      --text:#222;
+      --muted:#8a8a8a;
+      --bot:#fff;
+      --user:#e8f5e9;
+      --shadow:0 10px 30px rgba(0,0,0,.12);
+      --t:14px;
+      --font-ui:"Inter", system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+      --font-title:"Montserrat", var(--font-ui);
+    }
 
-/* === FAB (2 “Ярилцья”) === */
-.oy-fab{position:fixed;z-index:9998;background:var(--brand);color:#fff;border:none;border-radius:999px;
-  padding:10px 14px;box-shadow:var(--shadow);display:flex;gap:8px;align-items:center;font:600 14px var(--font-ui);cursor:pointer}
-.oy-fab svg{width:18px;height:18px;fill:#fff}
-.oy-fab-primary{bottom:20px;right:20px}
-.oy-fab-secondary{bottom:68px;right:20px;background:#333}
-@media (max-width:520px){.oy-fab-primary,.oy-fab-secondary{bottom:14px;right:14px}}
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0;background:var(--bg);color:var(--text);font:400 var(--t)/1.5 var(--font-ui)}
 
-/* === Overlay + Modal === */
-[hidden]{display:none!important}
-.oy-overlay{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:9999}
-.oy-modal{position:fixed;z-index:10000;right:16px;bottom:82px;width:100%;max-width:420px;height:80vh;max-height:720px;
-  background:#fff;border-radius:20px;box-shadow:var(--shadow);display:flex;flex-direction:column;overflow:hidden}
-@media (max-width:520px){.oy-modal{right:0;left:0;bottom:0;width:100%;height:100vh;border-radius:0}}
+    /* === Floating open buttons (гадаад) ========================= */
+    .oy-fab{position:fixed;right:18px;bottom:20px;padding:10px 14px;border-radius:999px;
+      display:flex;gap:8px;align-items:center;box-shadow:var(--shadow);cursor:pointer;
+      border:1px solid transparent;z-index:9998}
+    .oy-fab svg{width:18px;height:18px;fill:#fff}
+    .oy-fab-primary{background:var(--brand);color:#fff}
+    .oy-fab-outline{bottom:68px;background:var(--chat);color:#fff;border-color:var(--chat)}
+    .oy-fab-outline svg{fill:#fff}
+    @media (max-width:520px){.oy-fab-primary{right:20px;bottom:20px}.oy-fab-outline{right:20px;bottom:68px}}
 
-/* === Header === */
-.oy-topbar-spacer{height:0}
-.oy-header{position:sticky;top:0;height:52px;background:var(--brand);color:#fff;display:flex;align-items:center;z-index:2}
-.oy-iconbtn{background:transparent;border:none;color:#fff;cursor:pointer;width:44px;height:44px;display:grid;place-items:center}
-.oy-iconbtn svg{width:16px;height:16px;fill:#fff;stroke:#fff;stroke-width:1.5}
-.oy-title{flex:1;text-align:center;font:600 var(--t-base)/1.2 var(--font-title);padding:0 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    /* === Overlay + Modal shell ================================= */
+    .oy-overlay{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:9999}
+    .oy-modal{position:fixed;z-index:10000;right:16px;bottom:82px;width:100%;max-width:420px;height:80vh;max-height:720px;
+      background:#fff;border-radius:20px;box-shadow:var(--shadow);display:flex;flex-direction:column;overflow:hidden}
+    @media (max-width:520px){.oy-modal{right:0;left:0;bottom:0;width:100%;height:100vh;max-height:100vh;border-radius:0}}
+    [hidden]{display:none!important}
 
-/* === Drawer/Menu === */
-.oy-drawer{position:absolute;inset:0 auto 0 0;width:84%;max-width:320px;background:#fff;border-right:1px solid var(--line);
-  transform:translateX(-102%);transition:transform .25s ease;display:flex;flex-direction:column;z-index:3}
-.oy-drawer.open{transform:translateX(0)}
-.oy-menu{flex:1;overflow:auto;padding:8px;-webkit-overflow-scrolling:touch}
-.oy-card{border:1px solid var(--line);border-radius:12px;padding:10px;background:#fff;margin:6px 4px}
-.kv{font:600 13px var(--font-ui);margin:4px 0}
-.oy-item{padding:10px 12px;border-radius:12px;cursor:pointer;border:1px solid var(--line);
-  background:#fff;margin:6px 4px;font:14px var(--font-ui);display:flex;justify-content:space-between;align-items:center}
-.oy-section{margin:10px 6px}
-.oy-section h4{margin:10px 6px 6px;font:700 13px var(--font-title)}
-.hint{font:12px/1.3 var(--font-ui);color:#666;margin:6px 8px}
+    /* === Header (ногоон) ======================================= */
+    .oy-header{position:sticky;top:0;height:56px;background:var(--chat);color:#fff;display:flex;align-items:center;z-index:2}
+    .oy-iconbtn{width:44px;height:44px;margin:0 4px;display:grid;place-items:center;background:transparent;border:none;color:#fff;cursor:pointer;position:relative}
+    .oy-iconbtn svg{width:18px;height:18px;fill:#fff}
+    .oy-iconbtn.with-braille::after{content:attr(data-braille);position:absolute;left:100%;top:50%;transform:translateY(-50%);font:400 8px var(--font-ui);color:rgba(255,255,255,0.7);margin-left:4px;white-space:nowrap}
+    .oy-title{flex:1;text-align:center;font:400 15px var(--font-ui);padding-right:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
-/* === Chat lists (pills) === */
-.oy-pills{display:flex;flex-direction:column;gap:8px}
-.oy-pill{--c:#eee;--tc:#111;background:var(--c);color:var(--tc);border-radius:16px;padding:12px 14px;border:1px solid rgba(0,0,0,.06);
-  cursor:pointer;display:flex;justify-content:space-between;align-items:center;font:600 13px var(--font-ui);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.oy-pill .r{opacity:.7;font:12px/1.2 ui-monospace,monospace}
+    /* === Drawer (меню) ========================================= */
+    .oy-drawer{position:absolute;inset:0 auto 0 0;width:84%;max-width:390px;background:#fff;border-right:1px solid #eee;transform:translateX(-102%);transition:transform .25s ease;z-index:3}
+    .oy-drawer.open{transform:translateX(0)}
+    .oy-menulist{height:calc(100% - 56px);overflow-y:auto;overflow-x:hidden;padding:18px}
+    .account-info{padding:2px 2px 14px;position:relative;z-index:4;background:#fff}
+    .acc{background:#f8f8f8;border:1px solid #eee;border-radius:14px;padding:12px 14px;display:flex;align-items:center;gap:10px;margin-bottom:10px;cursor:pointer;transition:background .2s;min-height:44px}
+    .acc:hover{background:#f0f0f0}
+    .acc .i{width:20px;height:20px;display:grid;place-items:center;flex-shrink:0}
+    .acc .t{font:400 14px var(--font-ui);line-height:1.3;flex:1}
+    .acc svg{width:18px;height:18px;fill:var(--brand)}
+    .sec-title{font:400 12px var(--font-ui);color:#666;margin:15px 0 8px;text-transform:uppercase;letter-spacing:.3px}
 
-/* === Active chats === */
-#activeList .item{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:12px;padding:8px 10px;margin:6px 4px;background:#fff}
-#activeList .dot{width:10px;height:10px;border-radius:999px;background:#bbb;flex:0 0 auto}
-#activeList .name{flex:1;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font:600 14px/1.25 var(--font-title);color:#222}
-#activeList button{border:none;background:#eee;border-radius:8px;padding:2px 8px;cursor:pointer}
+    /* === Guides (чат сонгох) =================================== */
+    .group-title{font:400 11px var(--font-ui);letter-spacing:.4px;margin:15px 0 8px;color:#666;text-transform:uppercase;font-weight:500}
+    .oy-pills{display:flex;flex-direction:column;gap:8px;margin-bottom:15px}
+    .oy-pill{--c:#ddd;--tc:#111;background:var(--c);color:var(--tc);border-radius:12px;padding:12px 14px;border:1px solid rgba(0,0,0,.06);cursor:pointer;transition:transform .2s ease;min-height:44px;display:flex;align-items:center}
+    .oy-pill:hover{transform:translateY(-1px)}
+    .oy-pill span{font:400 14px var(--font-ui);line-height:1.3}
 
-/* === Panel in drawer === */
-.oy-panel{position:absolute;inset:0;background:#fff;border-left:1px solid var(--line);display:flex;flex-direction:column;z-index:4}
-.oy-panel header{height:44px;display:flex;align-items:center;gap:10px;padding:0 8px;border-bottom:1px solid var(--line);background:#fafafa}
-.oy-back{border:1px solid var(--line);background:#fff;border-radius:10px;padding:6px 10px;cursor:pointer}
-.oy-panel-title{font:600 14px var(--font-ui)}
-.oy-panel-body{padding:10px;overflow:auto}
-.card{border:1px solid var(--line);border-radius:12px;padding:10px;margin:8px 0;background:#fff}
-.muted{color:#777;font:12px/1.4 var(--font-ui)}
+    /* === Active list =========================================== */
+    .active-item{background:#f8f8f8;border:1px solid #eee;border-radius:12px;padding:10px 12px;margin-top:8px;display:flex;justify-content:space-between;align-items:center;min-height:40px}
+    .active-item .rm{background:#eee;border:none;border-radius:6px;padding:4px 8px;cursor:pointer;font:400 11px var(--font-ui)}
+    .dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:8px;vertical-align:middle;flex-shrink:0}
+    .active-item span{font:400 13px var(--font-ui);line-height:1.3}
 
-/* === Chat area === */
-.oy-chat{position:relative;flex:1;background:#fafafa;overflow:auto}
-.oy-stream{padding:12px 12px 100px;max-width:720px;margin:0 auto}
-.oy-bubble{max-width:84%;padding:10px 12px;border-radius:16px;margin:6px 0;font:14px/1.45 var(--font-ui)}
-.oy-bot{background:var(--bot);border:1px solid var(--line);border-top-left-radius:6px}
-.oy-user{background:var(--user);border:1px solid var(--line);border-top-right-radius:6px;margin-left:auto}
-.oy-meta{color:var(--muted);font:11px;margin:2px 0 0}
+    /* === Chat area ============================================= */
+    .oy-chat{flex:1;background:var(--wall);}
+    .oy-stream{padding:12px 14px 120px;overflow:auto;height:100%}
+    .msg{max-width:90%;padding:10px 14px;border-radius:14px;margin:8px 0;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+    .msg.user{margin-left:auto;background:var(--user)}
+    .msg.bot{background:var(--bot)}
+    .stamp{font-size:12px;color:#999;margin:0 14px}
 
-/* === Composer === */
-.oy-composer{position:absolute;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--line)}
-.oy-row{display:grid;grid-template-columns:40px 1fr 44px;gap:8px;padding:8px;align-items:center}
-.oy-file{position:relative;width:32px;height:32px;display:flex;align-items:center;justify-content:center;border:1px dashed var(--line);border-radius:12px;background:#fff;cursor:pointer}
-.oy-file svg{width:18px;height:18px;color:var(--brand)}
-.oy-textarea{min-height:42px;max-height:120px;resize:none;border:1px solid var(--line);border-radius:12px;padding:10px 12px;font:14px/1.35 var(--font-ui);outline:none;background:#fdfdfd}
-.oy-send{height:40px;width:44px;border:none;background:var(--brand);color:#fff;border-radius:12px;display:grid;place-items:center;cursor:pointer}
-.oy-send svg{width:18px;height:18px;fill:#fff}
+    /* === Composer (клип + илгээх НОГООН) ====================== */
+    .oy-composer{position:absolute;left:0;right:0;bottom:0;background:linear-gradient(to top, #fff 60%, transparent);padding:10px 12px}
+    .oy-row{display:flex;gap:10px;align-items:center}
+    .oy-textarea{flex:1;border:1px solid #e5e5e5;border-radius:12px;padding:12px 14px;min-height:44px;max-height:120px;resize:vertical}
+    .oy-file{width:38px;height:38px;display:grid;place-items:center;border:1px solid var(--chat);border-radius:10px;color:var(--chat);background:#fff;cursor:pointer;transition:all .2s ease}
+    .oy-file:hover{background:var(--chat);color:#fff;transform:scale(1.05)}
+    .clip::before{content:'📎';display:block;font-size:16px}
+    .oy-send{width:48px;height:44px;border:none;border-radius:12px;background:var(--chat);color:#fff;display:grid;place-items:center;cursor:pointer}
+    .icon-send{width:18px;height:18px;display:block;background:#fff;mask:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M2 21l20-9L2 3l5 7-5 7zm5-7l15-2-15-2 4 2-4 2z"/></svg>') no-repeat center/contain}
 
-/* A11y — braille (4 цэс дээр) */
-.braille{position:absolute;left:-999em;top:auto;width:1px;height:1px;overflow:hidden}
-body{margin:0;background:#fff;color:var(--text)}
-</style>
+    /* === Menu Content Areas =================================== */
+    .menu-content{display:none;padding:0}
+    .menu-content.active{display:block}
+
+    /* === Tooltips (зөвхөн 4 газарт) =========================== */
+    .simple-tooltip{position:relative}
+    .simple-tooltip:hover::after{
+      content:attr(data-tip);
+      position:absolute;
+      background:rgba(255,255,255,0.95);
+      color:#333;
+      padding:4px 8px;
+      border-radius:4px;
+      font:400 11px var(--font-ui);
+      white-space:nowrap;
+      z-index:1000;
+      box-shadow:0 2px 8px rgba(0,0,0,0.15);
+      border:1px solid #eee;
+      display:none;
+    }
+    .tip-right:hover::after{left:100%;top:50%;transform:translateY(-50%);margin-left:8px}
+    .tip-left:hover::after{right:100%;top:50%;transform:translateY(-50%);margin-right:8px}
+
+    /* === Жижиг бичиг нэмэх ==================================== */
+    .with-text{position:relative}
+    .menu-text{font:400 10px var(--font-ui);color:#666;margin-left:2px}
+    .chat-text{font:400 10px var(--font-ui);color:#666;margin-left:2px}
+    .special-text{font:400 10px var(--font-ui);color:#666;margin-top:2px}
+
+    /* === Simple helpers ======================================= */
+    .hide{display:none!important}
+    .collapse{
+      max-height:0;
+      overflow:hidden;
+      transition:max-height .4s ease-out;
+      opacity:0;
+      transform:translateY(-10px);
+    }
+    .collapse.show{
+      max-height:2000px;
+      opacity:1;
+      transform:translateY(0);
+      transition:max-height .4s ease-in, opacity .3s ease-in .1s, transform .3s ease-in .1s;
+    }
+  </style>
 </head>
 <body>
 
-<!-- 2 улаан “Ярилцья” -->
-<button id="oyOpen1" class="oy-fab oy-fab-primary" aria-label="Ярилцья нээх">
-  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 100 18 9 9 0 000-18zm1 13H8l5-5v5zm3-8H8v2h8V8z"/></svg>
-  Ярилцья
-</button>
-<button id="oyOpen2" class="oy-fab oy-fab-secondary" aria-label="Ярилцья нээх (нөө)">
-  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 100 20 10 10 0 000-20zm-1 14l6-6-1.4-1.4L11 12.2 8.4 9.6 7 11л4 5z"/></svg>
-  Ярилцья
-</button>
+  <!-- Гадаад "Ярилцъя" товчнууд -->
+  <button id="oyOpen1" class="oy-fab oy-fab-primary" aria-label="Ярилцъя">
+    <svg viewBox="0 0 24 24"><path d="M2 21l20-9L2 3l5 7-5 7z"/></svg> Ярилцъя
+  </button>
+  <button id="oyOpen2" class="oy-fab oy-fab-outline" aria-label="Ярилцъя">
+    <svg viewBox="0 0 24 24"><path d="M2 21l20-9L2 3l5 7-5 7z"/></svg> Ярилцъя
+  </button>
 
-<!-- Бүрхүүл + Модал -->
-<div id="oyOverlay" class="oy-overlay" hidden></div>
-<div id="oyModal" class="oy-modal" hidden role="dialog" aria-modal="true" aria-label="Чат цонх">
+  <!-- Overlay + Modal -->
+  <div id="oyOverlay" class="oy-overlay" hidden></div>
 
-  <div class="oy-topbar-spacer" aria-hidden="true"></div>
-
-  <!-- Толгой -->
-  <header class="oy-header" id="oyHeader">
-    <button id="btnDrawer" class="oy-iconbtn" aria-label="Меню (хараагүй)">
-      <span class="braille">⠍⠑⠝⠥ — МЕНЮ</span>
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18v2H3zM3 11h18v2H3zM3 16h18v2H3z"/></svg>
-    </button>
-    <div id="chatTitle" class="oy-title">Оюунсанаа — Сонголтоо хийнэ үү</div>
-    <button id="btnClose" class="oy-iconbtn" aria-label="Хаах">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
-    </button>
-  </header>
-
-  <!-- DRAWER / МЕНЮ -->
-  <aside id="oyDrawer" class="oy-drawer" aria-label="Меню">
-    <div class="oy-menu">
-
-      <!-- Нэр + Код -->
-      <div class="oy-card">
-        <div class="kv">Нэр: <b id="accName">Хэрэглэгч</b></div>
-        <div class="kv">Код: <b id="accCode">OY-0000</b></div>
-      </div>
-
-      <!-- 10 меню -->
-      <div class="oy-item" data-menu="account">📑 Миний бүртгэл</div>
-      <div class="oy-item" data-menu="summary">🤝🏻 Дүгнэлт</div>
-      <div class="oy-item" data-menu="daily">📅 Өдөр тутмын даалгавар</div>
-      <div class="oy-item" data-menu="journal">📗 Өдрийн тэмдэглэл → Ном</div>
-      <div class="oy-item" data-menu="goals">📈 Зорилго · Төлөвлөгөө · Хуваарь</div>
-      <div class="oy-item" data-menu="edu">🧠 Сэтгэлийн боловсрол</div>
-      <div class="oy-item" data-menu="health">🏃🏻‍♂️ Хоол · Дасгал</div>
-      <div class="oy-item" data-menu="reminders">⏰ Сануулга</div>
-      <div class="oy-item" data-menu="programs">✍🏻 Нэмэлт хөтөлбөр</div>
-
-      <!-- 10. Сэтгэлийн хөтөч -->
-      <div id="itemGuides" class="oy-item" data-menu="guides">
-        <b>🗨️ Сэтгэлийн хөтөч (чатууд)</b>
-        <span class="braille">⠎⠑⠞⠛⠑⠇⠊⠯ ⠓⠢⠞⠑⠯</span>
-      </div>
-
-      <section id="guidesWrap" class="oy-section" hidden aria-label="Сэтгэлийн хөтөч — жагсаалт">
-        <div class="hint">Ангилал тус бүр доор бичгээр ялгав. Нэгийг нь дарж чат руу орно.</div>
-        <!-- 15 чат — энгийнээр шууд гарна -->
-        <div id="guideList" class="oy-pills"></div>
-      </section>
-
-      <!-- Идэвхтэй чатууд -->
-      <section id="activeWrap" class="oy-section">
-        <h4>Идэвхтэй чатууд</h4>
-        <div id="activeList"></div>
-      </section>
-    </div>
-
-    <!-- Панел (менюгийн доторх) -->
-    <div id="oyPanel" class="oy-panel" hidden>
-      <header>
-        <button id="oyPanelBack" class="oy-back">Буцах</button>
-        <div id="oyPanelTitle" class="oy-panel-title">Панел</div>
-      </header>
-      <div id="oyPanelBody" class="oy-panel-body"></div>
-    </div>
-  </aside>
-
-  <!-- ЧАТ -->
-  <main class="oy-chat" id="oyChat">
-    <div id="oyStream" class="oy-stream"></div>
-  </main>
-
-  <!-- Компоузер -->
-  <div class="oy-composer">
-    <div class="oy-row">
-      <label for="oyFile" class="oy-file" aria-label="Файл/зураг нэмэх" title="Файл/зураг нэмэх">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 8.5l-8.485 8.485a5 5 0 11-7.071-7.071L14.5 1.858a3.5 3.5 0 114.95 4.95L9.88 16.379a2 2 0 11-2.828-2.828L16 4.603" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/></svg>
-      </label>
-      <input id="oyFile" type="file" multiple accept="image/*,.pdf" hidden>
-      <textarea id="oyInput" class="oy-textarea" rows="1" placeholder="Энд бичээд Enter дарна уу…"></textarea>
-      <button id="btnSend" class="oy-send" title="Илгээх">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 21l21-9L2 3v7l15 2-15 2z"/></svg>
+  <div id="oyModal" class="oy-modal" hidden role="dialog" aria-modal="true" aria-label="Чат цонх">
+    <header class="oy-header">
+      <button id="btnDrawer" class="oy-iconbtn with-braille" data-braille="⠍⠑⠝⠽⠥" title="Меню">
+        <svg viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
       </button>
+      <div id="chatTitle" class="oy-title">Оюунсанаа — Сэтгэлийн хөтөч</div>
+      <button id="btnClose" class="oy-iconbtn" title="Хаах">
+        <svg viewBox="0 0 24 24"><path d="M18.3 5.7L12 12l6.3 6.3-1.4 1.4L10.6 13.4 4.3 19.7 2.9 18.3 9.2 12 2.9 5.7 4.3 4.3l6.3 6.3 6.3-6.3z"/></svg>
+      </button>
+    </header>
+
+    <!-- Drawer / Меню -->
+    <aside id="oyDrawer" class="oy-drawer" aria-label="Меню">
+      <div class="oy-menulist" id="menu">
+        <div class="account-info">
+          <div style="font:400 16px var(--font-ui)">Нэр: <span id="accName">Хэрэглэгч</span></div>
+          <div style="color:#666;font:400 13px var(--font-ui)">Код: <span id="accCode">OY-0000</span></div>
+        </div>
+
+        <!-- 10 меню -->
+        <div class="acc" data-menu="profile"><span class="i"><svg viewBox="0 0 24 24"><path d="M12 12a5 5 0 100-10 5 5 0 000 10zm0 2c-5 0-9 2.5-9 5.5V22h18v-2.5C21 16.5 17 14 12 14z"/></svg></span><span class="t">Миний бүртгэл <span style="font:400 9px var(--font-ui);color:#999">⠍⠊⠝⠊⠊ ⠃⠥⠗⠞⠛⠑⠇</span></span></div>
+        <div class="acc" data-menu="report"><span class="i"><svg viewBox="0 0 24 24"><path d="M3 3h18v2H3zm0 7h12v2H3zm0 7h18v2H3z"/></svg></span><span class="t">Дүнглэл</span></div>
+        <div class="acc" data-menu="goals"><span class="i"><svg viewBox="0 0 24 24"><path d="M12 2l4 7H8l4-7zm0 9l4 7H8l4-7z"/></svg></span><span class="t">Зорилго · Төлөвлөгөө · Хуваарь</span></div>
+        <div class="acc" data-menu="tasks"><span class="i"><svg viewBox="0 0 24 24"><path d="M19 3H5v18l7-3 7 3V3z"/></svg></span><span class="t">Өдөр тутмын даалгавар</span></div>
+        <div class="acc" data-menu="diary"><span class="i"><svg viewBox="0 0 24 24"><path d="M4 6h16v2H4zm0 5h10v2H4zm0 5h16v2H4z"/></svg></span><span class="t">Өдрийн тэмдэглэл → Ном</span></div>
+        <div class="acc" data-menu="edu"><span class="i"><svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 100 18 9 9 0 000-18zm1 13h-2v-2h2v2zm0-4h-2V6h2v6z"/></svg></span><span class="t">Сэтгэлийн боловсрол</span></div>
+        <div class="acc" data-menu="health"><span class="i"><svg viewBox="0 0 24 24"><path d="M9 3h6v2H9zM7 7h10v2H7zm-2 4h14v2H5zm3 4h8v2H8z"/></svg></span><span class="t">Хоол · Дасгал</span></div>
+        <div class="acc" data-menu="reminder"><span class="i"><svg viewBox="0 0 24 24"><path d="M12 8a4 4 0 110 8 4 4 0 010-8zm0-6v2m0 16v2m10-10h-2M4 12H2m15.5-6.5l-1.4 1.4M7.9 16.1l-1.4 1.4m0-12.4l1.4 1.4M16.1 16.1l1.4 1.4"/></svg></span><span class="t">Сануулга</span></div>
+        <div class="acc" data-menu="extra"><span class="i"><svg viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm10 8h8V11h-8v10z"/></svg></span><span class="t">Нэмэлт хөтөлбөр</span></div>
+
+        <!-- Сэтгэлийн хөтөч - Toggle хийх -->
+        <div class="acc" data-menu="guides" id="guidesToggle">
+          <span class="i"><svg viewBox="0 0 24 24"><path d="M4 4h16v10H5l-1 1V4zM8 18h8v2H8z"/></svg></span>
+          <span class="t">Сэтгэлийн хөтөч (чатууд) <span style="font:400 9px var(--font-ui);color:#999">⠎⠑⠞⠛⠑⠇⠊⠊⠝ ⠓⠕⠞⠕⠗</span></span>
+        </div>
+
+        <!-- Guides Wrapper - Collapsible -->
+        <div id="guidesWrap" class="collapse">
+          <div class="guides-content">
+            <div class="group-title">Энгийн ангилал</div>
+            <div class="oy-pills" id="list-age"></div>
+
+            <div class="group-title">Багц ангилал</div>
+            <div class="oy-pills" id="list-bundle"></div>
+
+            <div class="group-title">Тусгай хэрэгцээт ангилал <span style="font:400 8px var(--font-ui);color:#999;margin-left:6px">⠞⠥⠎⠛⠁⠊ ⠓⠑⠗⠑⠛⠉⠑⠑⠞</span></div>
+            <div class="oy-pills" id="list-special"></div>
+          </div>
+        </div>
+
+        <!-- Идэвхтэй чатууд - гаднаа гаргав -->
+        <div class="sec-title">Идэвхтэй чатууд</div>
+        <div id="activeList"></div>
+
+        <!-- Menu Content Areas -->
+        <div id="menuContent"></div>
+      </div>
+    </aside>
+
+    <!-- Chat area -->
+    <main class="oy-chat" id="oyChat">
+      <div id="oyStream" class="oy-stream"></div>
+    </main>
+
+    <!-- Composer -->
+    <div class="oy-composer">
+      <div class="oy-row">
+        <label for="oyFile" class="oy-file" title="Файл/зураг"><span class="clip"></span></label>
+        <input id="oyFile" type="file" multiple accept="image/*,.pdf" hidden>
+        <textarea id="oyInput" class="oy-textarea" rows="1" placeholder="Энд бичээд Enter дарна уу…"></textarea>
+        <button id="btnSend" class="oy-send" title="Илгээх"><span class="icon-send"></span></button>
+      </div>
     </div>
   </div>
 
-</div>
+  <script>
+  (function(){
+    /* ---------- Элементүүд ---------- */
+    const el = {
+      open1: document.getElementById('oyOpen1'),
+      open2: document.getElementById('oyOpen2'),
+      overlay: document.getElementById('oyOverlay'),
+      modal: document.getElementById('oyModal'),
+      drawer: document.getElementById('oyDrawer'),
+      btnDrawer: document.getElementById('btnDrawer'),
+      btnClose: document.getElementById('btnClose'),
+      title: document.getElementById('chatTitle'),
+      stream: document.getElementById('oyStream'),
+      input: document.getElementById('oyInput'),
+      send: document.getElementById('btnSend'),
+      file: document.getElementById('oyFile'),
+      listAge: document.getElementById('list-age'),
+      listBundle: document.getElementById('list-bundle'),
+      listSpecial: document.getElementById('list-special'),
+      activeList: document.getElementById('activeList'),
+      accName: document.getElementById('accName'),
+      accCode: document.getElementById('accCode'),
+      guidesWrap: document.getElementById('guidesWrap'),
+      guidesToggle: document.getElementById('guidesToggle'),
+      menu: document.getElementById('menu'),
+      menuContent: document.getElementById('menuContent'),
+    };
 
-<script>
-(()=>{
+    /* ---------- Өнгөнд тохируулж текст өнгө сонгох ---------- */
+    const textColorFor = (hex)=>{
+      const c = String(hex||'#eee').replace('#','');
+      const r = parseInt(c.slice(0,2),16)||0, g = parseInt(c.slice(2,4),16)||0, b = parseInt(c.slice(4,6),16)||0;
+      const L = (0.299*r + 0.587*g + 0.114*b)/255;
+      return L > .7 ? '#111' : '#fff';
+    };
 
-  const $ = (s,r=document)=>r.querySelector(s);
+    /* ---------- Чатуудын жагсаалт ---------- */
+    const AGE = [
+      {slug:'age-0-7',  name:'Бага балчир үе (0–7)',   color:'#E1D9C9'},
+      {slug:'age-8-12', name:'Адтай бяцхан үе (8–12)', color:'#AE9372'},
+      {slug:'age-13-18',name:'Сэргэлэн өсвөр үе (13–18)', color:'#B27D57'},
+      {slug:'age-19-25',name:'Эхлэл, мөрөөдлийн үе (19–25)', color:'#7F4B30'},
+      {slug:'age-26-40',name:'Эрх чөлөөт, эрч хүчтэй үе (26–40)', color:'#A28B77'},
+      {slug:'age-41-55',name:'Туршлага, бүтээлийн үе (41–55)', color:'#7D8769'},
+      {slug:'age-56-70',name:'Ухаан, нөлөөллийн үе (56–70)', color:'#2A4C21'},
+      {slug:'age-70p', name:'Өвлөх, үлдээх үе (70+)', color:'#173125'}
+    ];
+    const BUNDLES = [
+      {slug:'fam',   name:'Гэр бүл',       color:'#D8A48F'},
+      {slug:'career',name:'Ажил мэргэжлийн', color:'#957C60'},
+      {slug:'class', name:'Анги хамт олон',  color:'#EFBE8C'},
+      {slug:'sport', name:'Спорт, урлагийн', color:'#ABAC97'},
+      {slug:'org',   name:'Байгууллага',    color:'#A33A29'}
+    ];
+    const SPECIAL = [
+      {slug:'vision',  name:'Харааны бэрхшээлтэй', color:'#353326'},
+      {slug:'special', name:'Тусгай хэрэгцээт',     color:'#897E45'}
+    ];
 
-  const el = {
-    open1: $('#oyOpen1'), open2: $('#oyOpen2'),
-    overlay: $('#oyOverlay'), modal: $('#oyModal'),
-    header: $('#oyHeader'), title: $('#chatTitle'),
-    drawer: $('#oyDrawer'), menu: $('.oy-menu'),
-    itemGuides: $('#itemGuides'), guidesWrap: $('#guidesWrap'),
-    guideList: $('#guideList'),
-    activeWrap: $('#activeWrap'), activeList: $('#activeList'),
-    panel: $('#oyPanel'), pBack: $('#oyPanelBack'),
-    pTitle: $('#oyPanelTitle'), pBody: $('#oyPanelBody'),
-    chat: $('#oyChat'), stream: $('#oyStream'),
-    file: $('#oyFile'), input: $('#oyInput'), send: $('#btnSend'),
-    btnDrawer: $('#btnDrawer'), btnClose: $('#btnClose'),
-    accName: $('#accName'), accCode: $('#accCode'),
-  };
+    /* ---------- Мэню агуулга JSON-оор ---------- */
+    const MENU_DATA = {
+      profile: {
+        title: "Миний бүртгэл",
+        content: `
+          <div style="padding:20px">
+            <h3>Хувийн мэдээлэл</h3>
+            <p>Нэр: <strong id="profileName">Хэрэглэгч</strong></p>
+            <p>Код: <strong id="profileCode">OY-0000</strong></p>
+            <p>Бүртгүүлсэн: 2024-08-20</p>
+            <p>Статус: Идэвхтэй</p>
+            <button style="padding:8px 16px;background:var(--brand);color:#fff;border:none;border-radius:8px;cursor:pointer">Засах</button>
+          </div>
+        `
+      }
+    };
 
-  /* ====== ӨГӨГДӨЛ ====== */
-  // 15 чат (өнгө нь UI дээр кодоор харагдахгүй — дотооддоо л хэрэглэнэ)
-  const CHATS = [
-    // Нас
-    {slug:'age-0-7',  group:'Насны ангилал', name:'Бага балчир үе (0–7)',           color:'#E1D9C9'},
-    {slug:'age-8-12', group:'Насны ангилал', name:'Адтай бяцхан үе (8–12)',         color:'#AE9372'},
-    {slug:'age-13-18',group:'Насны ангилал', name:'Сэргэлэн өсвөр үе (13–18)',      color:'#B27D57'},
-    {slug:'age-19-25',group:'Насны ангилал', name:'Эхлэл, мөрөөдлийн үе (19–25)',  color:'#7F4B30'},
-    {slug:'age-26-40',group:'Насны ангилал', name:'Эрх чөлөөт, эрч хүчтэй үе (26–40)', color:'#A28776'},
-    {slug:'age-41-55',group:'Насны ангилал', name:'Туршлага, бүтээлийн үе (41–55)', color:'#7D8769'},
-    {slug:'age-56-70',group:'Насны ангилал', name:'Ухаан, нөлөөллийн үе (56–70)',  color:'#424C21'},
-    {slug:'age-70p',  group:'Насны ангилал', name:'Өвлөж, үлдээх үе (70+)',         color:'#173125'},
-    // Багц
-    {slug:'fam',      group:'Багц', name:'Гэр бүл',              color:'#D8A48F'},
-    {slug:'career',   group:'Багц', name:'Ажил мэргэжлийн',      color:'#957C60'},
-    {slug:'class',    group:'Багц', name:'Анги хамт олон',       color:'#EFEBCE'},
-    {slug:'sport',    group:'Багц', name:'Спорт, урлагийн',      color:'#ABAC97'},
-    {slug:'org',      group:'Багц', name:'Байгууллага',          color:'#433A29'},
-    // Тусгай
-    {slug:'vision',   group:'Тусгай хэрэгцээт', name:'Харааны бэрхшээлтэй', color:'#353326'},
-    {slug:'special',  group:'Тусгай хэрэгцээт', name:'Тусгай хэрэгцээт',     color:'#897E45'},
-  ];
+    /* ---------- Төлөв ---------- */
+    const LSKEY = 'oy_state_v3';
+    let state = { account:{name:'Хэрэглэгч', code:'OY-0000'}, current:null, active:{} };
+    try{ const s = JSON.parse(localStorage.getItem(LSKEY)||'null'); if(s) state = s; }catch(e){}
 
-  // Төлөв (localStorage)
-  const LSKEY = 'oy_state_v1';
-  let state = {
-    account: {name:'Хэрэглэгч', code:'OY-0000'},
-    current: null,   // "slug"
-    active: {},      // slug -> {name,color}
-  };
-  try{ const s = JSON.parse(localStorage.getItem(LSKEY)||'null'); if(s) state = {...state, ...s}; }catch(_){}
-  const save = ()=> localStorage.setItem(LSKEY, JSON.stringify(state));
+    function save(){ localStorage.setItem(LSKEY, JSON.stringify(state)); }
 
-  /* ====== Нээх/хаах ====== */
-  function openModal(){ el.modal.hidden=false; el.overlay.hidden=false; bootOnce(); }
-  function closeModal(){ el.modal.hidden=true; el.overlay.hidden=true; closeDrawer(); save(); }
-  function toggleDrawer(){
-    const open = !el.drawer.classList.contains('open');
-    el.drawer.classList.toggle('open', open);
-    document.body.style.overflow = open ? 'hidden' : '';
-  }
-  function closeDrawer(){ el.drawer.classList.remove('open'); document.body.style.overflow=''; }
+    /* ---------- Мэню харуулах/нуух ---------- */
+    function showMenu(menuKey) {
+      // Бүх мэнү нуух
+      const allMenus = document.querySelectorAll('.menu-content');
+      allMenus.forEach(m => m.classList.remove('active'));
+      
+      // Чатуудыг нуух
+      el.guidesWrap.classList.remove('show');
+      
+      el.title.textContent = 'Оюунсанаа — Мэню';
+    }
 
-  /* ====== Bubble ====== */
-  function bubble(html, who='bot'){
-    const d=document.createElement('div');
-    d.className='oy-bubble '+(who==='user'?'oy-user':'oy-bot');
-    d.innerHTML=html; el.stream.appendChild(d);
-    el.chat.scrollTop=el.chat.scrollHeight;
-  }
-  const meta = t=>{ const m=document.createElement('div'); m.className='oy-meta'; m.textContent=t; el.stream.appendChild(m); };
+    /* ---------- Чат мэнү toggle хийх функц ---------- */
+    function toggleGuides() {
+      const isOpen = el.guidesWrap.classList.contains('show');
+      
+      if(isOpen) {
+        // Хаах үед: зөвхөн чат сонгох хэсгийг нуух, идэвхтэй чатууд үлдэнэ
+        el.guidesWrap.classList.remove('show');
+        el.title.textContent = 'Оюунсанаа — Сэтгэлийн хөтөч';
+      } else {
+        // Нээх үед: бусад мэнүг нуугаад чат сонгох хэсгийг харуулах
+        const allMenus = document.querySelectorAll('.menu-content');
+        allMenus.forEach(m => m.classList.remove('active'));
+        
+        el.guidesWrap.classList.add('show');
+        el.title.textContent = 'Оюунсанаа — Сэтгэлийн хөтөч';
+      }
+    }
 
-  /* ====== Helpers ====== */
-  function textColorFor(hex){
-    const c = hex.replace('#',''); const r=parseInt(c.substr(0,2),16), g=parseInt(c.substr(2,2),16), b=parseInt(c.substr(4,2),16);
-    const L=(0.299*r+0.587*g+0.114*b)/255; return L>0.7?'#111':'#fff';
-  }
-  function esc(s){return String(s).replace(/[&<>"']/g,m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m]));}
-
-  /* ====== Сэтгэлийн хөтөч: 15 чатыг шууд лист болгох ====== */
-  function renderAllChats(){
-    el.guideList.innerHTML='';
-    // “Насны ангилал”, “Багц”, “Тусгай хэрэгцээт” гэсэн бүлгийн гарчгийг текстээр тусгаарлана
-    const groups = ['Насны ангилал','Багц','Тусгай хэрэгцээт'];
-    groups.forEach(gr=>{
-      const h = document.createElement('div');
-      h.className='hint'; h.textContent = gr;
-      el.guideList.appendChild(h);
-      CHATS.filter(x=>x.group===gr).forEach(it=>{
+    /* ---------- Менүд чат сонгох pills үүсгэх ---------- */
+    function renderPills(target, arr){
+      target.innerHTML = '';
+      arr.forEach(it=>{
         const pill = document.createElement('div');
-        pill.className='oy-pill';
+        pill.className = 'oy-pill';
         pill.style.setProperty('--c', it.color);
         pill.style.setProperty('--tc', textColorFor(it.color));
-        pill.innerHTML = `<span>${esc(it.name)}</span>`;
+        
+        // Зөвхөн "Харааны бэрхшээлтэй" button-д бариал цэг нэмэх
+        if(it.slug === 'vision') {
+          pill.innerHTML = `<span>${it.name} <span style="font:400 9px var(--font-ui);opacity:0.7">⠓⠁⠗⠁⠁⠝⠽ ⠃⠑⠗⠓⠱⠑⠑⠇⠞⠑⠊</span></span>`;
+        } else {
+          pill.innerHTML = `<span>${it.name}</span>`;
+        }
+        
         pill.onclick = ()=> selectChat(it);
-        el.guideList.appendChild(pill);
+        target.appendChild(pill);
       });
+    }
+
+    function renderGuidesFlat(){
+      renderPills(el.listAge, AGE);
+      renderPills(el.listBundle, BUNDLES);
+      renderPills(el.listSpecial, SPECIAL);
+      renderActive();
+    }
+
+    function renderActive(){
+      if(!el.activeList) return; // Safety check
+      el.activeList.innerHTML = '';
+      
+      const activeEntries = Object.entries(state.active);
+      if(activeEntries.length === 0) {
+        el.activeList.innerHTML = '<div style="color:#999;font:400 12px var(--font-ui);padding:10px;text-align:center">Идэвхтэй чат байхгүй</div>';
+        return;
+      }
+      
+      activeEntries.forEach(([key, val])=>{
+        const row = document.createElement('div');
+        row.className = 'active-item';
+        row.innerHTML = `<div style="display:flex;align-items:center;flex:1;min-width:0"><span class="dot" style="background:${val.color}"></span><span style="font:400 13px var(--font-ui);line-height:1.3;overflow:hidden;text-overflow:ellipsis">${val.name}</span></div>
+                         <button class="rm" title="Хасах">×</button>`;
+        
+        // Чат сонгох event
+        row.onclick = (e) => {
+          if(e.target.classList.contains('rm')) return; // Remove button дарсан бол ignore
+          state.current = key;
+          save();
+          el.title.textContent = 'Оюунсанаа — ' + val.name;
+          el.drawer.classList.remove('open');
+          
+          // Мэню контентыг нуух
+          const allMenus = document.querySelectorAll('.menu-content');
+          allMenus.forEach(m => m.classList.remove('active'));
+          
+          // анхны мессеж
+          el.stream.innerHTML = '';
+          bubble('Сайн уу, хайрт минь. Сонгосон чатаараа ярилцья. 🌿','bot');
+        };
+        
+        row.querySelector('.rm').onclick = (e)=>{
+          e.stopPropagation();
+          delete state.active[key]; 
+          if(state.current===key) state.current=null; 
+          save(); 
+          renderActive();
+        };
+        el.activeList.appendChild(row);
+      });
+    }
+
+    /* ---------- Чат нээх / сонгох ---------- */
+    function selectChat(it){
+      const key = it.slug;
+      state.active[key] = {name:it.name, color:it.color};
+      state.current = key; save();
+      el.title.textContent = 'Оюунсанаа — ' + it.name;
+      el.drawer.classList.remove('open');
+      
+      // Мэню контентыг нуух
+      const allMenus = document.querySelectorAll('.menu-content');
+      allMenus.forEach(m => m.classList.remove('active'));
+      
+      // анхны мессеж
+      el.stream.innerHTML = '';
+      bubble('Сайн уу, хайрт минь. Сонгосон чатаараа ярилцья. 🌿','bot');
+      renderActive();
+    }
+
+    function bubble(text, who='bot'){
+      const div = document.createElement('div');
+      div.className = 'msg ' + (who==='user'?'user':'bot');
+      div.innerHTML = text;
+      el.stream.appendChild(div);
+      el.stream.scrollTop = el.stream.scrollHeight;
+    }
+
+    /* ---------- Илгээх + Файл ---------- */
+    function send(){
+      const t = (el.input.value||'').trim(); if(!t) return;
+      if(!state.current){ bubble('Эхлээд Сэтгэлийн хөтөчөөс чат сонгоорой.','bot'); return; }
+      bubble(escapeHtml(t), 'user');
+      el.input.value = '';
+      setTimeout(()=>{ const r = 'Сонсож байна, амар минь. Амьсгалаа зөөллөөрэй…'; bubble(r,'bot'); }, 400);
+    }
+    
+    if(el.send) el.send.addEventListener('click', send);
+    if(el.input) el.input.addEventListener('keydown', e=>{ if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); send(); } });
+
+    if(el.file) el.file.addEventListener('change', e=>{
+      if(!state.current){ e.target.value=''; return; }
+      const names = [...e.target.files].map(f=> f.name).slice(0,3).join(', ');
+      if(names) bubble('Хавсаргасан: <i>'+ escapeHtml(names) +'</i>','user');
+      e.target.value='';
     });
-  }
 
-  function selectChat(it){
-    state.current = it.slug;
-    state.active[it.slug] = {name:it.name, color:it.color};
-    save(); redrawActive();
-    el.title.textContent = `Оюунсанаа — ${it.name}`;
-    closeDrawer();
-    loadChat(it.slug, true);
-  }
+    /* ---------- Modal нээх/хаах ---------- */
+    const openModal = ()=>{ 
+      el.modal.hidden=false; 
+      el.overlay.hidden=false; 
+    };
+    const closeModal= ()=>{ 
+      el.modal.hidden=true;  
+      el.overlay.hidden=true;  
+      el.drawer.classList.remove('open'); // Drawer ч хаана
+    };
+    const toggleDrawer = ()=> el.drawer.classList.toggle('open');
 
-  function redrawActive(){
-    el.activeList.innerHTML='';
-    Object.entries(state.active).forEach(([slug,meta])=>{
-      const row=document.createElement('div'); row.className='item';
-      const dot=document.createElement('span'); dot.className='dot'; dot.style.background=meta.color;
-      const name=document.createElement('div'); name.className='name'; name.textContent=meta.name;
-      const x=document.createElement('button'); x.textContent='×'; x.title='Идэвхтээгээс хасах';
-      name.onclick=()=>{ state.current=slug; save(); el.title.textContent=`Оюунсанаа — ${meta.name}`; loadChat(slug,false); closeDrawer(); };
-      x.onclick=(e)=>{ e.stopPropagation(); delete state.active[slug]; if(state.current===slug) state.current=null; save(); redrawActive(); };
-      row.append(dot,name,x); el.activeList.appendChild(row);
+    // Event listeners
+    if(el.open1) el.open1.addEventListener('click', openModal);
+    if(el.open2) el.open2.addEventListener('click', openModal);
+    if(el.btnClose) el.btnClose.addEventListener('click', closeModal);
+    if(el.btnDrawer) el.btnDrawer.addEventListener('click', toggleDrawer);
+    if(el.overlay) el.overlay.addEventListener('click', closeModal);
+    
+    // Drawer автоматаар хаах
+    document.addEventListener('click', (e)=>{
+      if(!el.drawer.classList.contains('open')) return;
+      if(e.target.closest('#oyDrawer')) return;
+      if(e.target.closest('#btnDrawer')) return;
+      el.drawer.classList.remove('open');
     });
-  }
 
-  function storageKey(slug){return `oy_msgs_${slug}`;}
-  function loadChat(slug, greetIfEmpty){
-    el.stream.innerHTML='';
-    const raw=localStorage.getItem(storageKey(slug));
-    if(raw){
-      try{ (JSON.parse(raw)||[]).forEach(m=>bubble(m.html, m.who)); }catch(_){}
-    }else if(greetIfEmpty){
-      bubble('Сайн уу, хайрт минь. Чиний сонгосон чатаар тайван аялъя. 🌿','bot');
-      meta('Чат эхэллээ');
-    }
-    setTimeout(()=> el.input.focus(), 40);
-  }
-  function pushMsg(slug, who, html){
-    const k=storageKey(slug);
-    const arr=JSON.parse(localStorage.getItem(k)||'[]');
-    arr.push({t:Date.now(), who, html});
-    localStorage.setItem(k, JSON.stringify(arr));
-  }
+    /* ---------- Мэню handler-ууд ---------- */
+    // Мэню дарах event
+    document.addEventListener('click', (e) => {
+      const menuItem = e.target.closest('.acc[data-menu]');
+      if(!menuItem) return;
+      
+      const menuKey = menuItem.dataset.menu;
+      
+      if(menuKey === 'guides') {
+        // Чат мэнүг toggle хийх
+        toggleGuides();
+      } else {
+        // Бусад мэнүг харуулах
+        showMenu(menuKey);
+      }
+    });
 
-  /* ====== Панелууд (жич: одоохондоо placeholder) ====== */
-  const PANEL = {
-    account:{title:'Миний бүртгэл', html:`<div class="card"><b>Суурь мэдээлэл</b><div class="muted">Нэр, Код нь сайтын бүртгэлээс автоматаар орно.</div></div>`},
-    summary:{title:'Дүгнэлт', html:`<div class="card"><b>Анхны зураг</b><div class="muted">Унталт, ус, алхалт, стресс</div></div>`},
-    daily:{title:'Өдөр тутмын даалгавар', html:`<div class="card"><b>30 өдрийн чеклист</b></div>`},
-    journal:{title:'Өдрийн тэмдэглэл → Ном', html:`<div class="card"><b>Чөлөөт бичвэр</b></div>`},
-    goals:{title:'Зорилго · Төлөвлөгөө · Хуваарь', html:`<div class="card"><b>Том зорилго</b></div>`},
-    edu:{title:'Сэтгэлийн боловсрол', html:`<div class="card"><b>Бяцхан хичээлүүд</b></div>`},
-    health:{title:'Хоол · Дасгал', html:`<div class="card"><b>Ус / Калори / Дасгал</b></div>`},
-    reminders:{title:'Сануулга', html:`<div class="card"><b>Календарь сануулгууд</b></div>`},
-    programs:{title:'Нэмэлт хөтөлбөр', html:`<div class="card"><b>Жишээ багц</b></div>`},
-  };
-  function showPanel(key){
-    const p=PANEL[key]; if(!p) return;
-    el.pTitle.textContent=p.title; el.pBody.innerHTML=p.html; el.panel.hidden=false;
-    el.pBack.onclick=()=> el.panel.hidden=true;
-  }
+    /* ---------- Эхлэх ---------- */
+    renderGuidesFlat();
 
-  /* ====== Boot ====== */
-  function bootOnce(){
-    if(el.modal.dataset.boot) return; el.modal.dataset.boot='1';
-    // Нэр/Код (сайтаас дараа нь oySetAccount-аар шинэчлэгдэнэ)
-    el.accName.textContent = state.account.name||'Хэрэглэгч';
-    el.accCode.textContent = state.account.code||'OY-0000';
+    /* ---------- Бүртгэлийн мэдээллийг гаднаас оноох ---------- */
+    window.oySetAccount = function({name, code}={}){
+      if(name) state.account.name = name;
+      if(code) state.account.code = code;
+      el.accName.textContent = state.account.name || 'Хэрэглэгч';
+      el.accCode.textContent = state.account.code || 'OY-0000';
+      save();
+    };
+    // хадгалсан утгыг UI-д тусгах
+    window.oySetAccount(state.account);
 
-    // Сэтгэлийн хөтчийн листийг нэг дор рэндэрлэнэ
-    renderAllChats();
-    redrawActive();
-
-    // Өмнөх чат
-    if(state.current && state.active[state.current]){
-      el.title.textContent = `Оюунсанаа — ${state.active[state.current].name}`;
-      loadChat(state.current,false);
-    }else{
-      bubble('Сайн уу, хайрт минь. Сэтгэлийн хөтөчөөс чат сонгоод ярилцъя. 🌸','bot');
-      meta('Эхэллээ');
-    }
-  }
-
-  /* ====== Events ====== */
-  el.open1.onclick=openModal; el.open2.onclick=openModal;
-  el.overlay.onclick=closeModal; el.btnClose.onclick=closeModal;
-  el.btnDrawer.onclick=(e)=>{e.preventDefault();e.stopPropagation();toggleDrawer();};
-
-  // Меню item-ууд
-  el.menu.addEventListener('click', (e)=>{
-    const it = e.target.closest('.oy-item'); if(!it) return;
-    const key = it.dataset.menu;
-    if(key==='guides'){
-      const open = el.guidesWrap.hidden;
-      el.guidesWrap.hidden = !open;      // нээгдэнэ/хаагдана
-      // нээгдэхэд “Идэвхтэй чатууд”-ыг доош нь шилжүүлье
-      if(open) el.menu.appendChild(el.activeWrap); else el.menu.insertBefore(el.activeWrap, el.itemGuides.nextSibling);
-      return;
-    }
-    // Бусад нь панел
-    el.guidesWrap.hidden=true;
-    el.menu.insertBefore(el.activeWrap, el.itemGuides.nextSibling);
-    showPanel(key);
-  });
-
-  // Энд тэнд дарвал drawer хаагдана
-  document.addEventListener('click', (e)=>{
-    if(!el.drawer.classList.contains('open')) return;
-    if(e.target.closest('#oyDrawer')) return;
-    if(e.target.closest('#btnDrawer')) return;
-    closeDrawer();
-  }, true);
-
-  // Бичиж эхлэхэд мөн хаая
-  el.input.addEventListener('focus', ()=>{ if(el.drawer.classList.contains('open')) closeDrawer(); });
-
-  // Илгээх
-  function send(){
-    const t=(el.input.value||'').trim(); if(!t) return;
-    if(!state.current){ bubble('Эхлээд Сэтгэлийн хөтөчөөс чат сонгоорой. 🌿','bot'); el.input.value=''; return; }
-    bubble(esc(t),'user'); pushMsg(state.current,'user',esc(t)); el.input.value='';
-    setTimeout(()=>{ const ans='Сонсож байна, амраг минь. Амьсгалаа зөөлөн аваад… ярилцъя. 💬';
-      bubble(ans,'bot'); pushMsg(state.current,'bot',ans); save(); },140);
-  }
-  el.send.onclick=send;
-  el.input.addEventListener('keydown',(e)=>{ if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); send(); }});
-
-  // Файл
-  el.file.addEventListener('change',(e)=>{
-    if(!state.current){ e.target.value=''; return; }
-    const names=[...e.target.files].map(f=>f.name).slice(0,3).join(', ');
-    if(names){ bubble(`Хавсаргасан: <i>${esc(names)}</i>`,'user'); pushMsg(state.current,'user',`Хавсаргасан: <i>${esc(names)}</i>`); save(); }
-    e.target.value='';
-  });
-
-  // Гадуурхаас нэр/код оноох API (сайтнаасаа дуудаарай)
-  window.oySetAccount = function({name,code}={}){
-    if(name) state.account.name=name;
-    if(code) state.account.code=code;
-    el.accName.textContent=state.account.name||'Хэрэглэгч';
-    el.accCode.textContent=state.account.code||'OY-0000';
-    save();
-  };
-
-})();
-</script>
+    /* ---------- Util ---------- */
+    function escapeHtml(s){return s.replace(/[&<>"]/g, c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+  })();
+  </script>
 </body>
-</html>
+</html>,
+     
+
+
